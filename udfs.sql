@@ -640,3 +640,26 @@
           str = str.decode('utf-8')
           return unicodedata.normalize('NFKD', str).encode('ASCII', 'ignore')
         $$ language plpythonu;
+
+      /*
+      STR_ARRAY_COUNT
+      Counts the number of occurrences of an array of strings within a string
+
+      Examples:
+        select str_array_count('abcabdef', '["ab"]') --> '{"ab": 2}'
+        select str_array_count('Apples Bananas', '["Bananas", "an"]', false) --> '{"Bananas": 1, "an": 2}'
+        select str_array_count('Apples Bananas', '["Bananas", "an"]', true) --> '{"Bananas": 1, "an": 0}'
+        select str_array_count('aaa', '["a", "A"]') --> '{"a": 3, "A": 0}'
+      */
+      create or replace function str_array_count (full_str varchar(max), find_array varchar(max), split boolean)
+        returns varchar(max)
+        stable as $$
+          import json
+          if not full_str or not find_array:
+            return None
+          if split:
+            full_str = full_str.split()
+          find_array = json.loads(find_array)
+          dic = { str: full_str.count(str) for str in find_array }
+          return json.dumps(dic)
+        $$ language plpythonu;

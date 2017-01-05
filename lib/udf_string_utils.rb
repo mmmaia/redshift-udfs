@@ -233,6 +233,31 @@ class UdfStringUtils
                        ]
       }, {
           type:        :function,
+          name:        :str_array_count,
+          description: "Counts the number of occurrences of an array of strings within a string",
+          params:      "full_str varchar(max), find_array varchar(max), split boolean",
+          return_type: "varchar(max)",
+          body:        %~
+            import json
+            if not full_str or not find_array:
+              return None
+            if split:
+              full_str = full_str.split()
+            find_array = json.loads(find_array)
+            dic = { str: full_str.count(str) for str in find_array }
+            return json.dumps(dic)
+          ~,
+          tests:       [
+                           {query: "select ?('abcabdef', '[\"ab\"]')", expect: '{"ab": 2}', example: true},
+                           {query: "select ?('Apples Bananas', '[\"Bananas\", \"an\"]', false)", expect: '{"Bananas": 1, "an": 2}', example: true},
+                           {query: "select ?('Apples Bananas', '[\"Bananas\", \"an\"]', true)", expect: '{"Bananas": 1, "an": 0}', example: true},
+                           {query: "select ?('aaa', '[\"a\", \"A\"]')", expect: '{"a": 3, "A": 0}', example: true},
+                           {query: "select ?('abc', '[\"d\"]')", expect: '{"d": 0}'},
+                           {query: "select ?('', '')", expect: nil},
+                           {query: "select ?(null, null)", expect: nil},
+                       ]
+      }, {
+          type:        :function,
           name:        :remove_accents,
           description: "Remove accents from a string",
           params:      "str varchar(max)",
